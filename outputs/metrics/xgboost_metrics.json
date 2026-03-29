@@ -1,0 +1,41 @@
+{
+  "baseline_threshold_0_50": {
+    "threshold": 0.5,
+    "f1": 0.4166666666666667,
+    "precision": 0.6,
+    "recall": 0.3191489361702128,
+    "accuracy": 0.8571428571428571,
+    "roc_auc": 0.7366698251356705
+  },
+  "tuned_threshold_0_50": {
+    "threshold": 0.5,
+    "f1": 0.4,
+    "precision": 0.5357142857142857,
+    "recall": 0.3191489361702128,
+    "accuracy": 0.8469387755102041,
+    "roc_auc": 0.765871306744767
+  },
+  "tuned_threshold_best": {
+    "threshold": 0.48,
+    "f1": 0.39473684210526316,
+    "precision": 0.5172413793103449,
+    "recall": 0.3191489361702128,
+    "accuracy": 0.8435374149659864,
+    "roc_auc": 0.765871306744767
+  },
+  "best_threshold": 0.48,
+  "best_params_stage2": {
+    "subsample": 1.0,
+    "reg_lambda": 4.25,
+    "reg_alpha": 0.007,
+    "n_estimators": 500,
+    "min_child_weight": 1,
+    "max_depth": 7,
+    "learning_rate": 0.26,
+    "gamma": 0.07,
+    "colsample_bytree": 0.5
+  },
+  "cv_best_score_stage1_f1": 0.9289202567897956,
+  "cv_best_score_stage2_f1": 0.9255801496408935,
+  "created_utc": "2026-03-29T13:00:08.531184+00:00"
+}
