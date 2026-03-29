@@ -1,13 +1,13 @@
 {
   "selection_objective": "accuracy",
   "runtime_summary": {
-    "stage1_wall_time_seconds": 3.8894333749994985,
-    "stage2_wall_time_seconds": 4.021803208001074,
-    "total_wall_time_seconds": 7.911236583000573,
+    "stage1_wall_time_seconds": 6.150346416998218,
+    "stage2_wall_time_seconds": 3.9383820410002954,
+    "total_wall_time_seconds": 10.088728457998513,
     "stage1_trials": 28,
     "stage2_trials": 16,
     "total_trials": 44,
-    "best_trial_mean_fit_time_seconds": 0.2487255573272705
+    "best_trial_mean_fit_time_seconds": 0.2528125286102295
   },
   "cv_accuracy_best": 0.8723404255319149,
   "cv_accuracy_std_best": 0.01932542779211165,
@@ -72,5 +72,5 @@
   },
   "quality_gate_primary_pass": false,
   "quality_gate_secondary_note": "OK",
-  "created_utc": "2026-03-29T13:48:24.758345+00:00"
+  "created_utc": "2026-03-29T13:54:30.348292+00:00"
 }
