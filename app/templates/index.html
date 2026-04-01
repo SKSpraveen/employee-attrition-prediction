@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attrition Prediction</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .metric-card {
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+        }
+        .attrition-card {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+        }
+        .retention-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .total-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .metric-label {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+        .summary-section {
+            margin-bottom: 40px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid mt-5 px-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 style="color: #333;">Employee Attrition Prediction System</h1>
+            <p style="color: #666;">HR Analytics Dashboard - Full Employee Data with Predictions</p>
+            <a href="/compare" class="btn btn-info btn-sm">📊 Compare Model Performance</a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        <div class="row">
+            <div class="col-md-5">
+                <label for="model" class="form-label"><strong>Select ML Model</strong></label>
+                <select class="form-select" id="model" name="model" required>
+                    <option value="Random Forest">Random Forest</option>
+                    <option value="XGBoost">XGBoost ⭐ (Recommended)</option>
+                    <option value="SVM">Support Vector Machine</option>
+                    <option value="KNN">K-Nearest Neighbors</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="file" class="form-label"><strong>Upload Employee Data (CSV)</strong></label>
+                <input class="form-control" type="file" id="file" name="file" accept=".csv" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">Predict</button>
+            </div>
+        </div>
+    </form>
+
+    {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endif %}
+
+    {% if success and summary %}
+    <div class="summary-section">
+        <h3 style="color: #333; margin-bottom: 20px;">Quick Summary</h3>
+        <p style="color: #666;"><strong>Model Used:</strong> {{ model_name }} | <strong>Employees Analyzed:</strong> {{ total_rows }}</p>
+        
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="metric-card total-card">
+                    <div class="metric-label">Total Employees</div>
+                    <div class="metric-value">{{ summary.total_employees }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card attrition-card">
+                    <div class="metric-label">Will Leave (Risk)</div>
+                    <div class="metric-value">{{ summary.attrition_count }}</div>
+                    <div style="font-size: 1.5em; font-weight: bold;">{{ summary.attrition_percentage }}%</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card retention-card">
+                    <div class="metric-label">Will Stay (Safe)</div>
+                    <div class="metric-value">{{ summary.retention_count }}</div>
+                    <div style="font-size: 1.5em; font-weight: bold;">{{ summary.retention_percentage }}%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="attritionChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <canvas id="percentageChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div style="background-color: #f9f3e6; padding: 20px; border-radius: 8px; border-left: 4px solid #ff9800; margin-top: 30px;">
+            <h5 style="color: #ff6f00; margin-bottom: 15px;">📊 {{ model_name }} Model - What These Results Mean:</h5>
+            
+            {% if model_name == 'Random Forest' %}
+            <div style="color: #333; font-size: 0.9em; line-height: 1.8;">
+                <p style="margin-bottom: 15px; background-color: #ede7f6; padding: 12px; border-radius: 6px; border-left: 4px solid #6c5ce7;">
+                    <strong>🌲 Random Forest Model</strong><br>
+                    This model is a good general-purpose baseline. It flags more at-risk employees but with moderate confidence.
+                </p>
+                
+                <div style="margin-bottom: 15px;">
+                    <p style="margin-bottom: 8px;"><strong>Model Performance:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>Precision: 46.67%</strong> - When this model says an employee will leave, it's right only 46.67% of the time</li>
+                        <li><strong>Recall: 29.79%</strong> - It catches about 30% of employees who actually leave</li>
+                        <li><strong>Accuracy: 83.33%</strong> - Gets 83% of all predictions correct</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #fff3cd; padding: 12px; border-radius: 6px; border-left: 4px solid #d32f2f; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; font-weight: bold; color: #d32f2f;">⚠️ What This Means for Your Data:</p>
+                    <p style="margin: 8px 0; color: #333;">
+                        Out of the {{ summary.attrition_count }} employees flagged as at-risk:<br>
+                        • Only about <strong>{{ (summary.attrition_count * 0.4667) | int }}</strong> will actually leave<br>
+                        • About <strong>{{ (summary.attrition_count * 0.5333) | int }}</strong> won't leave (false alarms)
+                    </p>
+                </div>
+
+                <p style="color: #333; margin: 0;"><strong>Recommendation:</strong> Use this model for a broad overview. It's inclusive but less precise. Consider double-checking with another method before spending retention budget.</p>
+            </div>
+
+            {% elif model_name == 'XGBoost' %}
+            <div style="color: #333; font-size: 0.9em; line-height: 1.8;">
+                <p style="margin-bottom: 15px; background-color: #fff9e6; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <strong>⚡ XGBoost Model (RECOMMENDED)</strong><br>
+                    This model provides the best balance - high confidence with good coverage. Best for business decisions.
+                </p>
+                
+                <div style="margin-bottom: 15px;">
+                    <p style="margin-bottom: 8px;"><strong>Model Performance:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>Precision: 63.33%</strong> - When this model says an employee will leave, it's right 63% of the time ✅</li>
+                        <li><strong>Recall: 40.43%</strong> - It catches about 40% of employees who actually leave</li>
+                        <li><strong>Accuracy: 86.73%</strong> - Gets 87% of all predictions correct (BEST)</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #e8f5e9; padding: 12px; border-radius: 6px; border-left: 4px solid #2e7d32; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; font-weight: bold; color: #2e7d32;">✅ What This Means for Your Data:</p>
+                    <p style="margin: 8px 0; color: #333;">
+                        Out of the {{ summary.attrition_count }} employees flagged as at-risk:<br>
+                        • About <strong>{{ (summary.attrition_count * 0.6333) | int }}</strong> will actually leave<br>
+                        • About <strong>{{ (summary.attrition_count * 0.3667) | int }}</strong> won't leave (minimal waste)
+                    </p>
+                </div>
+
+                <p style="color: #333; margin: 0;"><strong>Recommendation:</strong> This is the best choice for budget allocation. High confidence means less wasted retention spending. Use this for making business decisions.</p>
+            </div>
+
+            {% elif model_name == 'SVM' %}
+            <div style="color: #333; font-size: 0.9em; line-height: 1.8;">
+                <p style="margin-bottom: 15px; background-color: #e0f2f1; padding: 12px; border-radius: 6px; border-left: 4px solid #00b894;">
+                    <strong>🎯 Support Vector Machine (SVM)</strong><br>
+                    This model is very conservative - it flags fewer employees but with high confidence.
+                </p>
+                
+                <div style="margin-bottom: 15px;">
+                    <p style="margin-bottom: 8px;"><strong>Model Performance:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>Precision: 56.00%</strong> - When this model says an employee will leave, it's right 56% of the time</li>
+                        <li><strong>Recall: 29.79%</strong> - It catches about 30% of employees who actually leave</li>
+                        <li><strong>Accuracy: 85.03%</strong> - Gets 85% of all predictions correct</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #fff3cd; padding: 12px; border-radius: 6px; border-left: 4px solid #ff9800; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; font-weight: bold; color: #ff6f00;">⚠️ What This Means for Your Data:</p>
+                    <p style="margin: 8px 0; color: #333;">
+                        Out of the {{ summary.attrition_count }} employees flagged as at-risk:<br>
+                        • About <strong>{{ (summary.attrition_count * 0.56) | int }}</strong> will actually leave<br>
+                        • About <strong>{{ (summary.attrition_count * 0.44) | int }}</strong> won't leave (less false alarms than Random Forest)
+                    </p>
+                </div>
+
+                <p style="color: #333; margin: 0;"><strong>Recommendation:</strong> Good if you want fewer false alarms and more confidence. Better than Random Forest but not as good as XGBoost overall.</p>
+            </div>
+
+            {% elif model_name == 'KNN' %}
+            <div style="color: #333; font-size: 0.9em; line-height: 1.8;">
+                <p style="margin-bottom: 15px; background-color: #f3e5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #667eea;">
+                    <strong>🎯 K-Nearest Neighbors (KNN)</strong><br>
+                    This model is simple and fast. It identifies some at-risk employees but requires careful interpretation.
+                </p>
+                
+                <div style="margin-bottom: 15px;">
+                    <p style="margin-bottom: 8px;"><strong>Model Performance:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>Precision: 43.48%</strong> - When this model says an employee will leave, it's right about 43% of the time</li>
+                        <li><strong>Recall: 21.28%</strong> - It catches about 21% of employees who actually leave</li>
+                        <li><strong>Accuracy: 82.99%</strong> - Gets 83% of all predictions correct</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #fff3cd; padding: 12px; border-radius: 6px; border-left: 4px solid #d32f2f; margin-bottom: 15px;">
+                    <p style="margin: 5px 0; font-weight: bold; color: #d32f2f;">⚠️ What This Means for Your Data:</p>
+                    <p style="margin: 8px 0; color: #333;">
+                        Out of the {{ summary.attrition_count }} employees flagged as at-risk:<br>
+                        • Only about <strong>{{ (summary.attrition_count * 0.4348) | int }}</strong> will actually leave<br>
+                        • About <strong>{{ (summary.attrition_count * 0.5652) | int }}</strong> won't leave (highest false alarms)
+                    </p>
+                </div>
+
+                <p style="color: #333; margin: 0;"><strong>Recommendation:</strong> Use for quick screening only. It misses many employees who actually leave and has high false alarms. Not recommended for budget allocation.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="summary-section">
+        <h3 style="color: #333; margin-bottom: 15px;">Complete Employee Analysis</h3>
+        
+        <div style="background-color: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; margin-bottom: 20px;">
+            <h5 style="color: #0066cc; margin-bottom: 10px;">How to Read This Report:</h5>
+            <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 0.95em;">
+                <li>RED STATUS (WILL LEAVE) = Employee at risk of leaving</li>
+                <li>GREEN STATUS (WILL STAY) = Employee likely to remain</li>
+                <li>YELLOW COLUMNS = Top 10 Key Risk Factors (Most important for attrition prediction)</li>
+            </ul>
+        </div>
+
+        <p style="color: #666; margin-bottom: 15px;"><strong>All Employee Data with Predictions and Key Risk Factors:</strong></p>
+
+        <div class="table-responsive" style="max-height: 700px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+            {{ prediction|safe }}
+        </div>
+
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; color: #856404;">
+                <strong>HR Action Items:</strong><br>
+                1. Identify all employees with RED status (WILL LEAVE)<br>
+                2. Look at their YELLOW COLUMNS (key risk factors) to understand why they might leave<br>
+                3. Develop targeted retention strategies: salary adjustment, flexibility, career growth, management changes, etc.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Charts
+        const attritionCtx = document.getElementById('attritionChart');
+        const percentageCtx = document.getElementById('percentageChart');
+        
+        if (attritionCtx) {
+            new Chart(attritionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Will Leave', 'Will Stay'],
+                    datasets: [{
+                        data: [{{ summary.attrition_count }}, {{ summary.retention_count }}],
+                        backgroundColor: ['#f5576c', '#4facfe'],
+                        borderColor: ['#fff', '#fff'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+        
+        if (percentageCtx) {
+            new Chart(percentageCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Will Leave %', 'Will Stay %'],
+                    datasets: [{
+                        label: 'Percentage',
+                        data: [{{ summary.attrition_percentage }}, {{ summary.retention_percentage }}],
+                        backgroundColor: ['#f5576c', '#4facfe'],
+                        borderColor: ['#c41e3a', '#0074d9'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { max: 100 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        
+        // Table highlighting
+        const importantFeatures = {{ important_features|tojson }};
+        const tbl = document.querySelector('table');
+        if (tbl) {
+            const headers = tbl.querySelectorAll('thead th');
+            const rows = tbl.querySelectorAll('tbody tr');
+            
+            headers.forEach((hdr, idx) => {
+                if (importantFeatures.includes(hdr.textContent.trim())) {
+                    hdr.style.backgroundColor = '#fff3cd';
+                    hdr.style.border = '2px solid #ffc107';
+                    hdr.style.fontWeight = 'bold';
+                    rows.forEach(row => {
+                        if (row.querySelectorAll('td')[idx]) {
+                            row.querySelectorAll('td')[idx].style.backgroundColor = '#fffacd';
+                            row.querySelectorAll('td')[idx].style.fontWeight = '500';
+                        }
+                    });
+                }
+                
+                if (hdr.textContent.trim() === 'Status') {
+                    rows.forEach(row => {
+                        const cell = row.querySelectorAll('td')[idx];
+                        if (cell) {
+                            const txt = cell.textContent.trim();
+                            if (txt.includes('WILL LEAVE')) {
+                                cell.style.backgroundColor = '#ffebee';
+                                cell.style.color = '#c41e3a';
+                                cell.style.fontWeight = 'bold';
+                            } else if (txt.includes('WILL STAY')) {
+                                cell.style.backgroundColor = '#e8f5e9';
+                                cell.style.color = '#2e7d32';
+                                cell.style.fontWeight = 'bold';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+
+    {% endif %}
+</div>
+</div>
+</body>
+</html>
