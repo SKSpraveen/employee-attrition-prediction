@@ -83,3 +83,16 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Environment variables
+.env
+.env.local
+
+# IDE specific
+.idea/
+*.swp
+*.swo
+
+# OS specific
+*.tmp
+~*
